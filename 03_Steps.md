@@ -39,3 +39,114 @@
     - Restart the instance
 
 # Create DAG
+## retail.py
+How to find `LocalFilesystemToGCSOperator`: 
+- Go to astro registry
+- Search local gcs
+  
+```python
+from airflow.decorators import dag, task
+from datetime import datetime
+
+from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
+
+@dag(
+    start_date=datetime(2023, 1, 1),
+    schedule=None,
+    catchup=False,
+    tags=['retail'],
+)
+def retail():
+
+    upload_csv_to_gcs = LocalFilesystemToGCSOperator(
+        task_id='upload_csv_to_gcs',
+        src='include/dataset/online_retail.csv', # local file path
+        dst='raw/online_retail.csv', # gcs destinatin path
+        bucket='april_online_retail', # gcs path
+        gcp_conn_id='gcp', # gcs connection id created on Airflow UI
+        mime_type='text/csv',
+    )
+
+retail()
+```
+
+Test the `upload_csv_to_gcs` task
+```
+astro dev bash
+airflow tasks test retail upload_csv_to_gcs 2023-01-01
+```
+
+## Upload csv to Bigquery
+### Create an empty Dataset (schema equivalent)
+```python
+from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateEmptyDatasetOperator
+
+create_retail_dataset = BigQueryCreateEmptyDatasetOperator(
+        task_id='create_retail_dataset',
+        dataset_id='retail',
+        gcp_conn_id='gcp',
+    )
+```
+### Create the task to load the file into a BigQuery raw_invoices table
+```python
+from astro import sql as aql
+from astro.files import File
+from astro.sql.table import Table, Metadata
+from astro.constants import FileType
+
+gcs_to_raw = aql.load_file(
+        task_id='gcs_to_raw',
+        input_file=File(
+            'gs://marclamberti_online_retail/raw/online_retail.csv', # file path
+            conn_id='gcp',
+            filetype=FileType.CSV,
+        ),
+        output_table=Table( 
+            name='raw_invoices', # name of table
+            conn_id='gcp',
+            metadata=Metadata(schema='retail') # under retail dataset
+        ),
+        use_native_support=False,
+    )
+```
+
+## Install Soda Core
+- In requirements.txt: `soda-core-bigquery==3.0.45`
+- Create a folder /soda
+- Create a `configuration.yml`:
+```
+-- include/soda/configuration.yml
+data_source retail:
+  type: bigquery
+  connection:
+    account_info_json_path: /usr/local/airflow/include/gcp/service_account.json
+    auth_scopes:
+    - https://www.googleapis.com/auth/bigquery
+    - https://www.googleapis.com/auth/cloud-platform
+    - https://www.googleapis.com/auth/drive
+    project_id: 'airtube-390719' -- replace with your project id
+    dataset: retail
+```
+- Restart instance to install soda defined in requirements: `astro dev restart`
+- Create a Soda Cloud account
+- Create an API → Profile → API Keys → Create API → Copy API in configuration.yml
+```
+data_source retail:
+  type: bigquery
+  connection:
+    account_info_json_path: /usr/local/airflow/include/gcp/service_account.json
+    auth_scopes:
+    - https://www.googleapis.com/auth/bigquery
+    - https://www.googleapis.com/auth/cloud-platform
+    - https://www.googleapis.com/auth/drive
+    project_id: 'airtube-390719'
+    dataset: retail
+soda_cloud:
+  host: cloud.soda.io
+  api_key_id: ec1bd081-1cfc-4037-93cc-d2ba94de930c
+  api_key_secret: CcCCtCBhMIdju4VLKovy6Tha8by7sm7AD4woIW5tlwJvI57Dt0H1sQ
+```
+- Test the connection
+```
+Test the connection
+```
