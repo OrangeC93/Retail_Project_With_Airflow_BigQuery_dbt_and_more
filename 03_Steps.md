@@ -148,5 +148,6 @@ soda_cloud:
 ```
 - Test the connection
 ```
-Test the connection
+astro dev bash
+soda test connection -d retail -c include/soda/configuratino.yml
 ```
