@@ -172,11 +172,11 @@ checks for raw_invoices:
 Run checks: `soda scan -d retail -c include/soda/configuration.yml include/soda/checks/sources/raw_invoices.yml`
 
 ## Soda Check Code
-ExternalPython uses an existing python virtual environment with dependencies pre-installed. That makes it faster to run than the VirtualPython where dependencies are installed at each run.
+ExternalPython uses an existing python virtual environment with dependencies pre-installed. That makes it faster to run than the VirtualPython where dependencies are installed at each run.For example if you have soda 1 or 2 Installed in your computer but your data quality check needs soda 3, then you can create a python vitural environment us the python operator so you can run quality check without impacting your computer
 
 include/soda/check_function.py:
 ```python
-def check(scan_name, checks_subpath=None, data_source='retail', project_root='include'):
+def check(scan_name, checks_subpath=None, data_source='retail', project_root='include'): # scan_name = 'check_load', check_subpatch='sources'
     from soda.scan import Scan
 
     print('Running Soda Scan ...')
@@ -184,7 +184,7 @@ def check(scan_name, checks_subpath=None, data_source='retail', project_root='in
     checks_path = f'{project_root}/soda/checks'
 
     if checks_subpath:
-        checks_path += f'/{checks_subpath}'
+        checks_path += f'/{checks_subpath}' # /soda/checks/sources
 
     scan = Scan()
     scan.set_verbose()
@@ -205,18 +205,18 @@ def check(scan_name, checks_subpath=None, data_source='retail', project_root='in
 Dockerfile: create the python virtual env:
 ```
 # install soda into a virtual environment
-RUN python -m venv soda_venv && source soda_venv/bin/activate && \
+RUN python -m venv soda_venv && source soda_venv/bin/activate && \ # define soda env and install soda-core related libraries
     pip install --no-cache-dir soda-core-bigquery==3.0.45 &&\
     pip install --no-cache-dir soda-core-scientific==3.0.45 && deactivate
 ```
 
-In the DAG, create a new task:
+In the DAG, create a new task: call check() in include/soda/check_function.py 
 ```python
-@task.external_python(python='/usr/local/airflow/soda_venv/bin/python')
-    def check_load(scan_name='check_load', checks_subpath='sources'):
+@task.external_python(python='/usr/local/airflow/soda_venv/bin/python') # where your python env is 
+    def check_load(scan_name='check_load', checks_subpath='sources'): # where the checks are sources # soda/checks/sources/raw_invoices
         from include.soda.check_function import check
-
         return check(scan_name, checks_subpath)
+check_load() # because we use decorator to create that task, you need to expicitly call these tasks in your tag otherwise the task doesn't exist
 ```
 
 Test the task:
