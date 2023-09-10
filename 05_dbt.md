@@ -96,3 +96,52 @@ cd user/local/airflow/include/dbt
 dbt depts # to install dbt dependencies in dbt utils
 dbt run --profile-dir /usr/local/airflow/include/dbt
 ```
+
+Go to bigquery UI: there're 4 new tables created
+
+## Integrate dbt into data pipeline by using Cosmos
+In dbt/cosmos_config.py:
+```
+# include/dbt/cosmos_config.py
+
+from cosmos.config import ProfileConfig, ProjectConfig
+from pathlib import Path
+
+DBT_CONFIG = ProfileConfig( # what profile we want to use
+    profile_name='retail',
+    target_name='dev',
+    profiles_yml_filepath=Path('/usr/local/airflow/include/dbt/profiles.yml')
+)
+
+DBT_PROJECT_CONFIG = ProjectConfig( # where the dbt profile is
+    dbt_project_path='/usr/local/airflow/include/dbt/',
+)
+```
+
+In dags/retail.py: add dbt tasks
+```
+from include.dbt.cosmos_config import DBT_PROJECT_CONFIG, DBT_CONFIG
+from cosmos.airflow.task_group import DbtTaskGroup
+from cosmos.constants import LoadMode
+from cosmos.config import ProjectConfig, RenderConfig
+
+transform = DbtTaskGroup(
+        group_id='transform',
+        project_config=DBT_PROJECT_CONFIG,
+        profile_config=DBT_CONFIG,
+        render_config=RenderConfig(
+            load_method=LoadMode.DBT_LS,
+            select=['path:models/transform']
+        ))
+```
+
+Test tasks:
+```
+astro dev bash
+airflow tasks list retail
+airflow tasks test retail transform.dim_customer.dim_customer_run 2023-01-01
+airflow tasks test retail transform.dim_customer.dim_customer_test 2023-01-01
+```
+
+
+![image](pics/dbt_dag.png)
