@@ -10,7 +10,6 @@
     - Click on the service account → Keys → Add Key → Copy the JSON content
     - Create a new file `service_account.json` in `include/gcp/` ->  `include/gcp/service_account.json`
 ```
-# 
 {
     "type": "service_account",
     "project_id": "airtube-390719",
