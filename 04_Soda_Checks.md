@@ -1,9 +1,8 @@
 ## Install Soda Core
 - In requirements.txt: `soda-core-bigquery==3.0.45`
 - Create a folder /soda
-- Create a `configuration.yml`:
+- Create a `include/soda/configuration.yml`:
 ```
--- include/soda/configuration.yml
 data_source retail:
   type: bigquery
   connection:
@@ -90,7 +89,7 @@ def check(scan_name, checks_subpath=None, data_source='retail', project_root='in
     return result
 ```
 
-Dockerfile: create the python virtual env:
+Dockerfile.py: create the python virtual env:
 ```
 # install soda into a virtual environment
 RUN python -m venv soda_venv && source soda_venv/bin/activate && \ # define soda env and install soda-core related libraries
