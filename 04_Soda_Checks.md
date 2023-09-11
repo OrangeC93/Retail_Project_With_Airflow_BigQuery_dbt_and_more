@@ -1,4 +1,4 @@
-## Install Soda Core
+# Install Soda Core
 - In requirements.txt: `soda-core-bigquery==3.0.45`
 - Create a folder /soda
 - Create a `include/soda/configuration.yml`:
@@ -40,7 +40,7 @@ soda test connection -d retail -c include/soda/configuratino.yml
 ```
 
 
-## Soda Checks
+# Soda Checks
 Create the first test for include/soda/checks/sources/raw_invoices.yml：
 ```
 checks for raw_invoices:
@@ -58,7 +58,7 @@ checks for raw_invoices:
 ```
 Run checks: `soda scan -d retail -c include/soda/configuration.yml include/soda/checks/sources/raw_invoices.yml`
 
-## Soda Check Code
+# Soda Check Code
 ExternalPython uses an existing python virtual environment with dependencies pre-installed. That makes it faster to run than the VirtualPython where dependencies are installed at each run.For example if you have soda 1 or 2 Installed in your computer but your data quality check needs soda 3, then you can create a python vitural environment us the python operator so you can run quality check without impacting your computer
 
 include/soda/check_function.py:
