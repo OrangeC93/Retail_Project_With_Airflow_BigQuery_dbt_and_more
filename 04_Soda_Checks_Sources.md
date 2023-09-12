@@ -1,5 +1,6 @@
 # Install Soda Core
 - In requirements.txt: `soda-core-bigquery==3.0.45`
+## Add connections config to Bigquery
 - Create a folder /soda
 - Create a `include/soda/configuration.yml`:
 ```
@@ -15,6 +16,7 @@ data_source retail:
     dataset: retail
 ```
 - Restart instance to install soda defined in requirements: `astro dev restart`
+## Add Soda secrets
 - Create a Soda Cloud account
 - Create an API → Profile → API Keys → Create API → Copy API in configuration.yml
 ```
@@ -39,7 +41,6 @@ astro dev bash
 soda test connection -d retail -c include/soda/configuratino.yml
 ```
 
-
 # Soda Checks
 Create the first test for include/soda/checks/sources/raw_invoices.yml：
 ```
@@ -60,7 +61,7 @@ Run checks: `soda scan -d retail -c include/soda/configuration.yml include/soda/
 
 # Soda Check Code
 ExternalPython uses an existing python virtual environment with dependencies pre-installed. That makes it faster to run than the VirtualPython where dependencies are installed at each run.For example if you have soda 1 or 2 Installed in your computer but your data quality check needs soda 3, then you can create a python vitural environment us the python operator so you can run quality check without impacting your computer
-
+## Add Check function
 include/soda/check_function.py:
 ```python
 def check(scan_name, checks_subpath=None, data_source='retail', project_root='include'): # scan_name = 'check_load', check_subpatch='sources'
@@ -88,7 +89,7 @@ def check(scan_name, checks_subpath=None, data_source='retail', project_root='in
 
     return result
 ```
-
+## Add Soda vitural env
 Dockerfile.py: create the python virtual env:
 ```
 # install soda into a virtual environment
@@ -96,7 +97,7 @@ RUN python -m venv soda_venv && source soda_venv/bin/activate && \ # define soda
     pip install --no-cache-dir soda-core-bigquery==3.0.45 &&\
     pip install --no-cache-dir soda-core-scientific==3.0.45 && deactivate
 ```
-
+## Add Soda check task
 In the DAG, create a new task: call check() in include/soda/check_function.py 
 ```python
 @task.external_python(python='/usr/local/airflow/soda_venv/bin/python') # where your python env is 
